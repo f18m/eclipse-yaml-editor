@@ -59,11 +59,26 @@ class ReplaceTabBySpacesVerifyKeyListener implements VerifyKeyListener {
 					if (offset == -1) {
 						offset = yamlEditor.lastCaretPosition;
 					}
+					
+					boolean isMultiline = ts.getStartLine() != -1 && ts.getEndLine() > ts.getStartLine();
+					
 					try {
 						int spaces = YamlEditorPreferences.getInstance().getAmountOfSpacesToReplaceTab();
 						String toInsert = createTabReplacement(spaces);
 						int toInsertLength = toInsert.length();
-						doc.replace(offset, ts.getLength(), toInsert);
+						
+						if (isMultiline) {
+							// split each line and insert the additional indent in each line:
+							String lines[] = ts.getText().split("\\r?\\n");
+							for (String line : lines)
+								line = toInsert + line;
+							doc.replace(offset, ts.getLength(), String.join("\n", lines));
+						}
+						else {
+							doc.replace(offset, ts.getLength(), toInsert);
+						}
+						
+						
 						Control control = yamlEditor.getAdapter(Control.class);
 						if (control instanceof StyledText) {
 							StyledText t = (StyledText) control;
